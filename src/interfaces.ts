@@ -2,7 +2,6 @@ export interface Point {x: number, y: number, z: number};
 export interface RoadPoint {world: Point, camera: Point, screen: Point, screenScale?: number};
 export interface RoadSegment {index: number, p1: RoadPoint, p2: RoadPoint, color: string};
 export interface Keys {left: boolean, right: boolean, up: boolean, down: boolean};
-export interface GameState {keys: Keys, position: number, trackLength: number, roadSegments: RoadSegment[], cameraDepth: number};
 export interface Colors {
     Dark: string,
     Light: string,

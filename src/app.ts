@@ -1,5 +1,5 @@
 import { Game } from './game';
-import { Colors, Constants } from './interfaces';
+import { Constants } from './interfaces';
 import { Player } from './player';
 import { Renderer } from './renderer';
 import { Road } from './road';

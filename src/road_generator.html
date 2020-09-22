@@ -1,0 +1,60 @@
+<body style=margin:0>
+<canvas id=a>
+<script>
+c=a.getContext`2d`;
+hsl=(h)=>`hsl(${h},100%,50%)`;
+dtr=a=>a*Math.PI/180;// Degree to radians
+w=(a,b)=>a[0]*b[1]-a[1]*b[0];// Wedge operator (2d cross product)
+si=(a)=>Math.sin(a);// Sin
+co=(a)=>Math.cos(a);// Cos
+sr=(l,x,y,a)=>{a+=l[1]||0;x+=si(a)*l[0];y+=co(a)*l[0]; return[x,y,a]};//Straight road
+cr=(pl,l,nl,x,y,a)=>{ // Curve road
+    // Use quadratic curve and this https://stackoverflow.com/a/565282 to get the control point position
+    r=[si(a)*pl[0],co(a)*pl[0]];
+    p=[x-r[0],y-r[1]];
+    da=l[1]*(l[2]||1);
+    q=[x+si(a+da*0.5)*l[0],y+co(a+da*0.5)*l[0]];
+    s=[si(a+da)*nl[0],co(a+da)*nl[0]];
+    u=w([q[0]-p[0],q[1]-p[1]],r)/w(r,s);
+    cx=q[0]+u*s[0];cy=q[1]+u*s[1];
+    x=q[0];y=q[1];a+=da;
+    return[cx,cy,x,y,a];
+}
+(()=>{
+    // Parallel lines are not supported, split 180deg turns in two
+    line=[[200],[50,dtr(45)],[20,dtr(100),-1],[100],[50,dtr(45),-1],[100],[25,dtr(100),-1],[250],[60,dtr(120)],[30,dtr(40),-1],[30],[60,dtr(80),-1],[250,dtr(10)],[100],[90,dtr(90),-1],[50,dtr(60),-1],[50],[30,dtr(30)],[50],[60,dtr(60),-1],[150]]
+    a.width=innerWidth;a.height=innerHeight;
+    c.lineWidth=15;
+    x=innerWidth/2,y=innerHeight/2,a=0,cx=cy=0;
+    line.forEach((l,i)=>{
+        c.beginPath();
+        c.strokeStyle=hsl(i*30);
+        c.moveTo(x,y);
+        if (l[1])
+        {
+            [cx,cy,x,y,a]=cr(line[i-1],l,line[i+1],x,y,a);
+            c.quadraticCurveTo(cx,cy,x,y);
+        }
+        else
+        {
+            [x,y,a]=sr(l,x,y,a);
+            c.lineTo(x,y);
+        }
+        c.stroke();
+    })
+    // Close circuit
+    c.beginPath();
+    c.strokeStyle=hsl(line.length*30);
+    c.moveTo(x, y);
+    pl=line[line.length-1];
+    r=[si(a)*pl[0],co(a)*pl[0]];
+    p=[x-r[0],y-r[1]];
+    nl=line[0];
+    q=[innerWidth/2,innerHeight/2];
+    s=[si(nl[1]||0)*nl[0],co(nl[1]||0)*nl[0]];
+    u=w([q[0]-p[0],q[1]-p[1]],r)/w(r,s);
+    cx=q[0]+u*s[0];cy=q[1]+u*s[1];
+    c.quadraticCurveTo(cx, cy, q[0], q[1]);
+    c.stroke();
+})();
+</script>

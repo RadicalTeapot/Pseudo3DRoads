@@ -1,5 +1,5 @@
 import { keyPressed, initKeys } from 'kontra';
-import { Constants, Keys, RoadSegment } from './interfaces';
+import { Constants, Keys, RoadPiece, RoadSegment } from './interfaces';
 import { Player } from './player';
 import { Renderer } from './renderer';
 import { Road } from './road';
@@ -25,8 +25,8 @@ export class Game {
         initKeys();
     }
 
-    public start() {
-        this.road.buildRoad(this.constants_);
+    public start(pieces: RoadPiece[]) {
+        this.road.buildRoad(pieces);
         this.state.reset(this.constants_);
         this.now_ = Date.now();
         this.last_ = this.now_;
@@ -44,6 +44,7 @@ export class Game {
         this.checkKeys();
 
         this.state.position = (this.state.position + this.step_ * this.player.speed) % this.road.trackLength;
+        let currentSegment = this.road.findSegment(this.state.position);
         // At max speed, cross road left to right in 1 sec
         let dx = this.dt_ * 2 * (this.player.speed / this.constants_.MaxSpeed);
         if (this.state.keys.left)
@@ -62,6 +63,7 @@ export class Game {
             this.player.speed += this.constants_.OffRoadDeceleration * this.dt_;
 
         this.player.roadX = Math.min(Math.max(this.player.roadX, -2), 2);
+        this.player.roadX = this.player.roadX - (dx * (this.player.speed / this.constants_.MaxSpeed) * currentSegment.curve * this.constants_.Centrifugal);
         this.player.speed = Math.min(Math.max(this.player.speed, 0), this.constants_.MaxSpeed);
 
         this.player.width = this.player.baseWidth * (this.state.cameraDepth / this.state.playerZ) * this.renderer_.width / 2;
@@ -76,14 +78,20 @@ export class Game {
         this.renderer_.context.fillRect(0, 0, this.renderer_.width, this.renderer_.height);
 
         let baseSegment = this.road.findSegment(this.state.position);
+        let segmentPercent = (this.state.position % this.road.segmentLength) / this.road.segmentLength;
+        let x = 0;
+        let dx = - (segmentPercent * baseSegment.curve);
         let maxY = this.renderer_.height;
         let i: number, segment: RoadSegment;
 
         for (i = 0; i < this.constants_.DrawDistance; i++) {
-            segment = this.road.segments[(baseSegment.index + i) % this.road.segments.length];
+            segment = this.road.segments[(baseSegment.index + i) % this.road.segmentsCount];
 
-            this.renderer_.project(segment.p1, (this.player.roadX * this.constants_.RoadWidth), this.constants_.CameraHeight, this.state.position - Math.floor((i+baseSegment.index)/this.road.segments.length) * this.road.trackLength, this.constants_.RoadWidth, this.state.cameraDepth);
-            this.renderer_.project(segment.p2, (this.player.roadX * this.constants_.RoadWidth), this.constants_.CameraHeight, this.state.position - Math.floor((i+baseSegment.index)/this.road.segments.length) * this.road.trackLength, this.constants_.RoadWidth, this.state.cameraDepth);
+            this.renderer_.project(segment.p1, (this.player.roadX * this.constants_.RoadWidth) - x, this.constants_.CameraHeight, this.state.position - Math.floor((i+baseSegment.index)/this.road.segmentsCount) * this.road.trackLength, this.constants_.RoadWidth, this.state.cameraDepth);
+            this.renderer_.project(segment.p2, (this.player.roadX * this.constants_.RoadWidth) - x - dx, this.constants_.CameraHeight, this.state.position - Math.floor((i+baseSegment.index)/this.road.segmentsCount) * this.road.trackLength, this.constants_.RoadWidth, this.state.cameraDepth);
+
+            x = x + dx;
+            dx = dx + segment.curve;
 
             if (segment.p1.camera.z <= this.state.cameraDepth || segment.p2.screen.y >= maxY)
                 continue;

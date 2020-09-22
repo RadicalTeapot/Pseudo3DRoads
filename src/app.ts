@@ -1,5 +1,5 @@
 import { Game } from './game';
-import { Constants } from './interfaces';
+import { Constants, RoadConstants, RoadPiece } from './interfaces';
 import { Player } from './player';
 import { Renderer } from './renderer';
 import { Road } from './road';
@@ -16,13 +16,32 @@ const constants: Constants = {
     Deceleration: -1000,
     OffRoadDeceleration: -5000,
     OffRoadMinSpeed: 4000,
+    Centrifugal: 0.3,
     Colors: {
-        Dark: '#666',
-        Light: '#777',
         Sky: '#aec1c4',
         Grass: '#6ead7c',
     }
 };
+const roadConstants: RoadConstants = {
+    SegmentLength: 200,
+    RumbleLength: 6,
+    Length: {None: 0, Short: 25, Medium: 50, Long: 100},
+    Curve: {None: 0, Easy: 2, Medium: 4, Hard: 6},
+    Colors: {
+        Dark: '#666',
+        Light: '#777',
+    }
+}
 
-let game = new Game(60, constants, new Player(300, 150, 'red'), new Road(200, 300, 6), new Renderer('canvas', constants));
-game.start();
+const road: RoadPiece[] = [
+    {enter: roadConstants.Length.None, hold: roadConstants.Length.Long, leave: roadConstants.Length.None, curve: roadConstants.Curve.None},
+    {enter: roadConstants.Length.Short, hold: roadConstants.Length.Medium, leave: roadConstants.Length.Short, curve: roadConstants.Curve.Medium},
+]
+
+let game = new Game(
+    60, constants,
+    new Player(300, 150, 'red'),
+    new Road(roadConstants),
+    new Renderer('canvas', constants)
+);
+game.start(road);
